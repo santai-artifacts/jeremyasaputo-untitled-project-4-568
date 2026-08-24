@@ -464,12 +464,38 @@
   el("backBtn").onclick = () => setStep(1);
   el("editBtn").onclick = () => { renderBlanks(); setStep(2); };
   el("againBtn").onclick = () => { el("prompt").value = ""; setStep(1); el("prompt").focus(); };
-  el("copyBtn").onclick = async () => {
+  async function copyText(text) {
+    // navigator.clipboard is often blocked inside sandboxed preview iframes,
+    // so fall back to a hidden textarea + execCommand.
+    if (navigator.clipboard && window.isSecureContext) {
+      try { await navigator.clipboard.writeText(text); return true; } catch {}
+    }
     try {
-      await navigator.clipboard.writeText(plainStory());
-      toast("Story copied! 📋");
-    } catch {
-      toast("Couldn't copy — select and copy manually.");
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch { return false; }
+  }
+
+  el("copyBtn").onclick = async () => {
+    const ok = await copyText(plainStory());
+    toast(ok ? "Story copied! 📋" : "Copy blocked — story is selectable below to copy.");
+    if (!ok) {
+      // As a last resort, select the rendered story so the user can Ctrl/Cmd+C.
+      const range = document.createRange();
+      range.selectNodeContents(el("storyText"));
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
     }
   };
 </script>
