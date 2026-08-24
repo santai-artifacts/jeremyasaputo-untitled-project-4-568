@@ -100,6 +100,22 @@
   }
   .chip:hover { color: var(--muted); }
   .chip-sep { color: var(--faint); }
+  .refresh {
+    font: inherit; font-size: 16px; line-height: 1; background: none; border: none;
+    color: var(--muted); cursor: pointer; padding: 0 2px; margin-left: 12px; vertical-align: baseline;
+  }
+  .refresh:hover { color: var(--ink); }
+  .refresh.spin-once { animation: spin .4s linear; }
+
+  /* input + per-word suggest button */
+  .inputrow { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
+  .inputrow input[type="text"] { border-bottom: none; flex: 1; }
+  .wordbtn {
+    font: inherit; font-size: 18px; line-height: 1; background: none; border: none;
+    color: var(--muted); cursor: pointer; padding: 6px 2px; flex: none;
+  }
+  .wordbtn:hover { color: var(--ink); }
+  .wordbtn.spinning { color: var(--ink); animation: spin 1s linear infinite; }
 
   button.primary, button.ghost {
     font-family: inherit; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase;
@@ -259,18 +275,65 @@
     "a detective solving a pizza heist",
     "my dog running for president",
     "an underwater rock concert",
+    "a wizard's first day at high school",
+    "a grandma who races monster trucks",
+    "aliens reviewing Earth's snacks",
+    "a haunted vending machine",
+    "the cat mayor of a small town",
+    "two rival ice cream trucks",
+    "a knight afraid of horses",
+    "a pigeon planning a bank heist",
+    "the last slice of pizza on Earth",
+    "a yoga class for dinosaurs",
+    "a superhero whose power is naps",
+    "a talking GPS that gives up",
+    "a spelling bee gone terribly wrong",
+    "a spa retreat for tired robots",
+    "the ghost who haunts a laundromat",
+    "a food truck on the moon",
+    "a librarian with a secret double life",
+    "a penguin who hates the cold",
+    "the world's clumsiest ninja",
   ];
 
   /* ---------- suggestions ---------- */
   const chips = el("chips");
-  chips.innerHTML = '<span class="lbl">Try&nbsp;&nbsp;</span>';
-  SUGGESTIONS.forEach((s, i) => {
-    if (i > 0) { const sep = document.createElement("span"); sep.className = "chip-sep"; sep.textContent = " · "; chips.appendChild(sep); }
-    const b = document.createElement("button");
-    b.className = "chip"; b.type = "button"; b.textContent = s;
-    b.onclick = () => { el("prompt").value = s; autoGrow(el("prompt")); el("prompt").focus(); };
-    chips.appendChild(b);
-  });
+  let chipStart = 0;
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  let chipPool = shuffle(SUGGESTIONS);
+
+  function renderChips() {
+    chips.innerHTML = '<span class="lbl">Try&nbsp;&nbsp;</span>';
+    const picks = [];
+    for (let k = 0; k < 5; k++) picks.push(chipPool[(chipStart + k) % chipPool.length]);
+    picks.forEach((s, i) => {
+      if (i > 0) { const sep = document.createElement("span"); sep.className = "chip-sep"; sep.textContent = " · "; chips.appendChild(sep); }
+      const b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.textContent = s;
+      b.onclick = () => { el("prompt").value = s; autoGrow(el("prompt")); el("prompt").focus(); };
+      chips.appendChild(b);
+    });
+    const ref = document.createElement("button");
+    ref.className = "refresh"; ref.type = "button"; ref.textContent = "↻";
+    ref.title = "More ideas"; ref.setAttribute("aria-label", "More ideas");
+    ref.onclick = () => {
+      chipStart += 5;
+      if (chipStart >= chipPool.length) { chipPool = shuffle(SUGGESTIONS); chipStart = 0; }
+      ref.classList.add("spin-once");
+      setTimeout(() => ref.classList.remove("spin-once"), 400);
+      renderChips();
+    };
+    chips.appendChild(ref);
+  }
+  renderChips();
 
   function autoGrow(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }
   el("prompt").addEventListener("input", () => autoGrow(el("prompt")));
@@ -344,7 +407,10 @@
       div.innerHTML =
         '<label class="hint" for="b' + i + '"><span class="num">' + String(i+1).padStart(2,"0") + '</span>' +
         escapeHtml(b.label) + '</label>' +
-        '<input type="text" id="b' + i + '" autocomplete="off" />';
+        '<div class="inputrow">' +
+          '<input type="text" id="b' + i + '" autocomplete="off" />' +
+          '<button class="wordbtn" type="button" title="Think of a word for me" aria-label="Think of a word for me">↻</button>' +
+        '</div>';
       const input = div.querySelector("input");
       input.value = state.values[i] || "";
       input.addEventListener("input", () => { state.values[i] = input.value; state.savedId = null; });
@@ -355,9 +421,31 @@
           if (next) next.focus(); else revealStory();
         }
       });
+      const wbtn = div.querySelector(".wordbtn");
+      wbtn.onclick = () => suggestWord(b.label, input, wbtn, i);
       wrap.appendChild(div);
     });
     setTimeout(() => { const f = wrap.querySelector("input"); if (f) f.focus(); }, 60);
+  }
+
+  async function suggestWord(label, input, btn, i) {
+    if (btn.classList.contains("spinning")) return;
+    btn.classList.add("spinning");
+    try {
+      const res = await fetch("/api/word", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label, theme: state.prompt }),
+      });
+      const out = await res.json();
+      if (!res.ok || !out.word) throw new Error(out.error || "no word");
+      input.value = out.word;
+      state.values[i] = out.word;
+      state.savedId = null;
+    } catch {
+      toast("Couldn't think of one");
+    } finally {
+      btn.classList.remove("spinning");
+    }
   }
 
   /* ---------- the smart assembler ----------

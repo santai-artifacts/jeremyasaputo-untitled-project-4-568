@@ -217,6 +217,50 @@ const server = {
       }
     }
 
+    // --- Suggest a single word for one blank ("think of a word for me") ---
+    if (url.pathname === "/api/word" && req.method === "POST") {
+      try {
+        if (!process.env.SANTAI_AI_TOKEN) {
+          return Response.json({ error: "AI is not configured." }, { status: 503 });
+        }
+        const body = await req.json().catch(() => ({}));
+        const label = String(body?.label ?? "").trim().slice(0, 80);
+        const theme = String(body?.theme ?? "").trim().slice(0, 200);
+        if (!label) return Response.json({ error: "No label." }, { status: 400 });
+
+        const msg = await ai.messages.create({
+          model: MODEL,
+          max_tokens: 24,
+          system:
+            "You suggest one playful, family-friendly word for a Mad Libs blank. " +
+            "Reply with ONLY the word (or a 2-word name/phrase if the hint asks for a name). " +
+            "No quotes, no punctuation, no explanation. Lowercase unless it's a proper name.",
+          messages: [
+            {
+              role: "user",
+              content:
+                `Give me one "${label}"` +
+                (theme ? ` that would be funny in a story about ${theme}.` : ".") +
+                ` Just the word.`,
+            },
+          ],
+        });
+        let word = msg.content
+          .map((b: any) => (b.type === "text" ? b.text : ""))
+          .join("")
+          .split("\n")[0]
+          .trim()
+          .replace(/^["'“‘(]+|["'”’).,!?;:]+$/g, "")
+          .trim()
+          .slice(0, 40);
+        if (!word) return Response.json({ error: "No word." }, { status: 502 });
+        return Response.json({ word });
+      } catch (err) {
+        console.error("word failed:", err);
+        return Response.json({ error: "Couldn't think of one." }, { status: 500 });
+      }
+    }
+
     // --- Saved-story gallery ---
     if (url.pathname === "/api/stories" && req.method === "GET") {
       const rows = db
