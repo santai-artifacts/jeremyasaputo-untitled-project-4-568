@@ -304,12 +304,15 @@ async function suggestOne(
       {
         role: "user",
         content:
-          `Give me the funniest "${label}"` +
-          (theme ? ` for a story about ${theme}` : "") +
-          (sentence ? ` to drop into this sentence where the ___ is: "${sentence}"` : "") +
-          `. The word can be absurd and random, but it MUST fit the part of speech so the ` +
-          `sentence still reads correctly (no double verbs, no broken grammar). ` +
-          `Surprise me; lean toward ${randomAngle()} if it fits.` +
+          `Give me the funniest "${label}".` +
+          (sentence
+            ? ` It will be dropped into this sentence: "${sentence}". Use the sentence ONLY to get ` +
+              `the grammar right — the right part of speech, singular vs plural, verb tense — so it ` +
+              `reads correctly (no double verbs). Do NOT pick a word that fits the topic of the sentence. `
+            : ` `) +
+          `The whole joke of Mad Libs is a word that's bizarrely OUT OF PLACE, so make it wildly ` +
+          `unrelated to what the sentence${theme ? ` and the "${theme}" story` : ""} are about — ` +
+          `random and absurd, not sensible. Reach into ${randomAngle()} or ${randomAngle()} for something unexpected.` +
           (avoidAll.length ? ` It must be different from: ${avoidAll.join(", ")}.` : "") +
           ` Just the word.`,
       },
@@ -405,7 +408,9 @@ async function fillAll(
   const list = blanks
     .map((b) => {
       const s = template ? sentenceFor(template, b.id) : "";
-      return s ? `${b.id}. ${b.label} — sentence: "${s}"` : `${b.id}. ${b.label}`;
+      // Show the sentence only as a GRAMMAR guide (part of speech, singular/plural),
+      // never as a topic to match — the fill should clash with it, not fit it.
+      return s ? `${b.id}. ${b.label} — must fit the grammar of: "${s}"` : `${b.id}. ${b.label}`;
     })
     .join("\n");
   const recent = recentSample(70);
@@ -419,10 +424,12 @@ async function fillAll(
         {
           role: "user",
           content:
-            `Theme: ${theme || "(none)"}\n\n` +
-            `Fill each blank below with the FUNNIEST word you can imagine. Each must match its ` +
-            `part-of-speech hint, but can be totally random and absurd — humor over sense. ` +
-            `Every word MUST be different from all the others. Be wildly varied and avoid your ` +
+            `This is a Mad Libs about "${theme || "anything"}". The comedy comes from words that are ` +
+            `BIZARRELY OUT OF PLACE, so do NOT pick words that fit the story — pick words that clash ` +
+            `with it and surprise. A sentence is shown for each blank ONLY so you get the grammar right ` +
+            `(part of speech, singular vs plural, verb tense); ignore its topic when choosing the word.\n\n` +
+            `Fill each blank with the funniest, most unexpected word that fits its grammar — random and ` +
+            `absurd beats sensible every time. Every word MUST be different from all the others. Avoid your ` +
             `usual go-to jokes — for inspiration, roam through territory like ${randomAngle()}, ` +
             `${randomAngle()}, and ${randomAngle()}. Family-friendly.\n\n` +
             (recent.length
