@@ -113,7 +113,10 @@
   .refresh svg, .wordbtn svg { display: block; }
   .refresh.spin-once svg { animation: spin .5s linear; }
   .wordbtn.spinning { color: var(--ink); }
-  .wordbtn.spinning svg { animation: spin 1s linear infinite; }
+  .flowerspin {
+    display: inline-block; font-size: 16px; line-height: 1;
+    animation: spin 1s linear infinite;
+  }
 
   /* input + per-word suggest button */
   .inputrow { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--line); }
@@ -131,6 +134,12 @@
 
   .actions { margin-top: 40px; display: flex; gap: 14px; flex-wrap: wrap; }
   .hidden { display: none !important; }
+
+  .lucky-bar {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding-bottom: 30px; margin-bottom: 30px; border-bottom: 1px solid var(--faint);
+  }
+  .lucky-note { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 
   /* blanks */
   .blank-grid { display: grid; gap: 28px; }
@@ -232,11 +241,14 @@
 
     <!-- STEP 2 -->
     <section id="step2" class="hidden">
-      <label class="field-label">Fill in the blanks — no peeking at the story</label>
+      <div class="lucky-bar">
+        <button class="primary" id="luckyBtn">✿ I'm feeling lucky</button>
+        <span class="lucky-note">fill every blank at once</span>
+      </div>
+      <label class="field-label">Or fill in the blanks yourself — no peeking at the story</label>
       <div class="blank-grid" id="blanks"></div>
       <div class="actions">
         <button class="primary" id="revealBtn">Reveal story</button>
-        <button class="ghost" id="luckyBtn">✿ I'm feeling lucky</button>
         <button class="ghost" id="backBtn">New theme</button>
       </div>
       <div id="err2"></div>
@@ -440,6 +452,7 @@
   async function suggestWord(label, input, btn, i) {
     if (btn.classList.contains("spinning")) return;
     btn.classList.add("spinning");
+    btn.innerHTML = '<span class="flowerspin">✿</span>'; // spinning flower while it thinks
 
     // Words already in the story (other blanks) — never suggest a duplicate.
     const usedElsewhere = new Set(
@@ -470,6 +483,7 @@
       toast("Couldn't think of one");
     } finally {
       btn.classList.remove("spinning");
+      btn.innerHTML = REFRESH_SVG;
     }
   }
 
