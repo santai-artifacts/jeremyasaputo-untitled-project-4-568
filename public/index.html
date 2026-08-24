@@ -527,6 +527,27 @@
   const OPEN_QUOTES = ['"', "'", "“", "‘", "(", "["];
   const TERMINALS = new Set([".", "!", "?", ",", ";", ":"]);
 
+  // Decide "a" vs "an" from the following word's SOUND, not just its letter,
+  // so a filled blank never reads "a apple" or "an spatula".
+  const AN_EXC = /^(hour|honest|honor|honour|heir|hono[ru])/i;      // silent-h → an
+  const A_EXC = /^(uni|use|usu|ubiq|uten|utop|uran|urin|ufo|eu|ewe|once|one|ukulele|ouija)/i; // vowel letter, consonant "yoo"/"w" sound → a
+  function wantsAn(word) {
+    const w = (word || "").trim().replace(/^[^A-Za-z]+/, "");
+    if (!w) return false;
+    if (AN_EXC.test(w)) return true;
+    if (A_EXC.test(w)) return false;
+    return /^[aeiou]/i.test(w);
+  }
+  // Rewrite a trailing "a"/"an" in prior text to agree with `val`, keeping case.
+  function fixArticle(prevText, val) {
+    if (!val) return prevText;
+    const want = wantsAn(val) ? "an" : "a";
+    return prevText.replace(/(^|[\s("'“‘\[])(an?)(\s+)$/i, (mm, pre, art, sp) => {
+      const cased = art[0] === art[0].toUpperCase() ? want[0].toUpperCase() + want.slice(1) : want;
+      return pre + cased + sp;
+    });
+  }
+
   function assemble(data, values) {
     const byId = {};
     data.blanks.forEach((b, i) => { byId[b.id] = (values[i] != null ? String(values[i]) : "").trim(); });
@@ -559,6 +580,20 @@
       if (sentenceStart && val) {
         const idx = val.search(/[A-Za-z]/);
         if (idx !== -1) val = val.slice(0, idx) + val[idx].toUpperCase() + val.slice(idx + 1);
+      }
+
+      // a/an agreement: if this blank is preceded by an article, make it match
+      // the actual filled word. Rewrite it in the emitted literal part.
+      if (val && /(^|[\s("'“‘\[])an?\s+$/i.test(emitted)) {
+        for (let k = parts.length - 1; k >= 0; k--) {
+          if (parts[k].fill) break;
+          const fixed = fixArticle(parts[k].text, val);
+          if (fixed !== parts[k].text) {
+            emitted = emitted.slice(0, emitted.length - parts[k].text.length) + fixed;
+            parts[k].text = fixed;
+            break;
+          }
+        }
       }
 
       // punctuation dedup: if the word already ends a sentence, drop the template's next mark

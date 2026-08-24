@@ -134,6 +134,15 @@ function validate(data: any) {
     }
   }
 
+  // Deterministic grammar linter #3: a plural-noun blank right after "a"/"an"
+  // reads "a spatulas". Force it singular so the fill agrees with the article.
+  // (The a/an sound itself is fixed at render time, once the word is known.)
+  for (const b of blanks) {
+    if (!/noun/i.test(b.label) || !/plural|nouns/i.test(b.label)) continue;
+    const re = new RegExp(`(^|[\\s("'])(an?)\\s+\\[\\[${b.id}\\]\\]`, "i");
+    if (re.test(data.template)) b.label = "noun";
+  }
+
   // Structural quality gates — reject so the caller regenerates.
   const paragraphs = data.template.split(/\n{2,}/).map((p: string) => p.trim()).filter(Boolean);
   if (paragraphs.length < 4)
