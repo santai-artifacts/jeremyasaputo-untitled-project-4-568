@@ -100,22 +100,25 @@
   }
   .chip:hover { color: var(--muted); }
   .chip-sep { color: var(--faint); }
-  .refresh {
-    font: inherit; font-size: 16px; line-height: 1; background: none; border: none;
-    color: var(--muted); cursor: pointer; padding: 0 2px; margin-left: 12px; vertical-align: baseline;
+  .refresh, .wordbtn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; padding: 0;
+    background: none; border: none; border-radius: 50%;
+    color: var(--muted); cursor: pointer;
+    transition: background .15s, color .15s;
   }
-  .refresh:hover { color: var(--ink); }
-  .refresh.spin-once { animation: spin .4s linear; }
+  .refresh { margin-left: 10px; vertical-align: middle; }
+  .refresh:hover, .wordbtn:hover { background: #f1f1f1; color: var(--ink); }
+  .refresh:active, .wordbtn:active { background: #e6e6e6; }
+  .refresh svg, .wordbtn svg { display: block; }
+  .refresh.spin-once svg { animation: spin .5s linear; }
+  .wordbtn.spinning { color: var(--ink); }
+  .wordbtn.spinning svg { animation: spin 1s linear infinite; }
 
   /* input + per-word suggest button */
-  .inputrow { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
+  .inputrow { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--line); }
   .inputrow input[type="text"] { border-bottom: none; flex: 1; }
-  .wordbtn {
-    font: inherit; font-size: 18px; line-height: 1; background: none; border: none;
-    color: var(--muted); cursor: pointer; padding: 6px 2px; flex: none;
-  }
-  .wordbtn:hover { color: var(--ink); }
-  .wordbtn.spinning { color: var(--ink); animation: spin 1s linear infinite; }
+  .inputrow:focus-within { border-bottom-color: var(--ink); }
 
   button.primary, button.ghost {
     font-family: inherit; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase;
@@ -269,6 +272,11 @@
   const el = (id) => document.getElementById(id);
   const state = { data: null, values: [], prompt: "", savedId: null };
 
+  const REFRESH_SVG =
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
+
   const SUGGESTIONS = [
     "a dragon who opens a bakery",
     "the worst day at a robot factory",
@@ -322,7 +330,7 @@
       chips.appendChild(b);
     });
     const ref = document.createElement("button");
-    ref.className = "refresh"; ref.type = "button"; ref.textContent = "↻";
+    ref.className = "refresh"; ref.type = "button"; ref.innerHTML = REFRESH_SVG;
     ref.title = "More ideas"; ref.setAttribute("aria-label", "More ideas");
     ref.onclick = () => {
       chipStart += 5;
@@ -409,7 +417,7 @@
         escapeHtml(b.label) + '</label>' +
         '<div class="inputrow">' +
           '<input type="text" id="b' + i + '" autocomplete="off" />' +
-          '<button class="wordbtn" type="button" title="Think of a word for me" aria-label="Think of a word for me">↻</button>' +
+          '<button class="wordbtn" type="button" title="Think of a word for me" aria-label="Think of a word for me">' + REFRESH_SVG + '</button>' +
         '</div>';
       const input = div.querySelector("input");
       input.value = state.values[i] || "";
@@ -431,15 +439,31 @@
   async function suggestWord(label, input, btn, i) {
     if (btn.classList.contains("spinning")) return;
     btn.classList.add("spinning");
+
+    // Words already in the story (other blanks) — never suggest a duplicate.
+    const usedElsewhere = new Set(
+      state.values
+        .map((v, idx) => (idx !== i && v ? v.trim().toLowerCase() : ""))
+        .filter(Boolean)
+    );
+    const avoid = [...usedElsewhere];
+
     try {
-      const res = await fetch("/api/word", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label, theme: state.prompt }),
-      });
-      const out = await res.json();
-      if (!res.ok || !out.word) throw new Error(out.error || "no word");
-      input.value = out.word;
-      state.values[i] = out.word;
+      let chosen = null, lastWord = null;
+      for (let attempt = 0; attempt < 4 && !chosen; attempt++) {
+        const res = await fetch("/api/word", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ label, theme: state.prompt, avoid }),
+        });
+        const out = await res.json();
+        if (!res.ok || !out.word) throw new Error(out.error || "no word");
+        lastWord = out.word;
+        if (!usedElsewhere.has(out.word.trim().toLowerCase())) chosen = out.word;
+        else if (!avoid.includes(out.word)) avoid.push(out.word); // steer away and retry
+      }
+      const word = chosen || lastWord;
+      input.value = word;
+      state.values[i] = word;
       state.savedId = null;
     } catch {
       toast("Couldn't think of one");

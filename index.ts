@@ -226,6 +226,9 @@ const server = {
         const body = await req.json().catch(() => ({}));
         const label = String(body?.label ?? "").trim().slice(0, 80);
         const theme = String(body?.theme ?? "").trim().slice(0, 200);
+        const avoid = Array.isArray(body?.avoid)
+          ? body.avoid.map((w: any) => String(w).trim()).filter(Boolean).slice(0, 40)
+          : [];
         if (!label) return Response.json({ error: "No label." }, { status: 400 });
 
         const msg = await ai.messages.create({
@@ -241,6 +244,9 @@ const server = {
               content:
                 `Give me one "${label}"` +
                 (theme ? ` that would be funny in a story about ${theme}.` : ".") +
+                (avoid.length
+                  ? ` It must be DIFFERENT from every one of these already-used words: ${avoid.join(", ")}.`
+                  : "") +
                 ` Just the word.`,
             },
           ],
