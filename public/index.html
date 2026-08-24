@@ -467,7 +467,10 @@
       for (let attempt = 0; attempt < 4 && !chosen; attempt++) {
         const res = await fetch("/api/word", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ label, theme: state.prompt, avoid }),
+          body: JSON.stringify({
+            label, theme: state.prompt, avoid,
+            template: state.data.template, id: state.data.blanks[i].id,
+          }),
         });
         const out = await res.json();
         if (!res.ok || !out.word) throw new Error(out.error || "no word");
@@ -497,7 +500,7 @@
     try {
       const res = await fetch("/api/fill", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theme: state.prompt, blanks: state.data.blanks }),
+        body: JSON.stringify({ theme: state.prompt, blanks: state.data.blanks, template: state.data.template }),
       });
       const out = await res.json();
       if (!res.ok || !Array.isArray(out.words)) throw new Error(out.error || "Couldn't fill them in");

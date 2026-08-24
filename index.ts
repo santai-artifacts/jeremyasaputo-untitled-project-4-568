@@ -58,8 +58,9 @@ GRAMMAR — every blank MUST read correctly no matter what the player types. Thi
 - The sentence around a token must be grammatical for ANY word of that label. Write the sentence so the label fits naturally.
 - "adjective" is ONLY ever placed directly before a noun (e.g. "a [[x]] hat", "the [[x]] dog") — NEVER after "in", "was", or standing alone. If a slot follows "in the", "was", "into", or ends a phrase, it must be a NOUN, not an adjective.
 - "noun" / "plural noun" go where a thing belongs; "verb" where an action belongs; "verb ending in -ing" only after "was/were/started" or as a gerund; "number" only where a count fits; "exclamation" only inside quotes as an interjection.
+- A VERB blank ("verb", "verb (past tense)", "verb ending in -ed") must be the ONLY verb in its clause — it IS the action. NEVER place a verb blank right before or after another verb. WRONG: "My dog [[x]] announced his plan" (two verbs → "wiggled announced"). RIGHT: "My dog [[x]] down the street" or "My dog loudly [[x]] at the mailman." If the subject already has a real verb like "announced", do not insert a verb blank next to it — make that slot an adverb or move it elsewhere.
 - Do NOT stack two number-style blanks together. Do NOT label a blank "adjective" if the fix would be a noun.
-- Re-read each sentence with a plausible filler word for that label and confirm it is grammatical before finalizing.
+- Re-read each sentence by dropping in a plausible filler word for that label. If it produces two verbs in a row, an adjective after "in/into", or any broken grammar, rewrite the sentence before finalizing.
 
 TOKENS:
 - Token ids are sequential from 1, each id appears exactly once, in reading order.
@@ -106,6 +107,30 @@ function validate(data: any) {
     const m = data.template.match(re);
     if (m && PREPS.has(m[1].toLowerCase())) {
       b.label = "noun";
+    }
+  }
+
+  // Deterministic grammar linter #2: a verb blank sitting next to another verb
+  // makes two verbs in a row ("My dog ___ announced" -> "wiggled announced").
+  // Relabel it to "adverb", which always reads correctly ("proudly announced").
+  const IRREGULAR = new Set([
+    "ran", "went", "said", "ate", "saw", "made", "won", "took", "gave", "held",
+    "flew", "drove", "sang", "told", "became", "stood", "sat", "found", "led",
+    "grew", "threw", "spoke", "broke", "wore", "rode", "shook", "began",
+  ]);
+  const looksVerb = (w: string) => {
+    const x = (w || "").toLowerCase();
+    return /(?:ed|es)$/.test(x) || IRREGULAR.has(x);
+  };
+  for (const b of blanks) {
+    if (!/verb/i.test(b.label) || /ing/i.test(b.label)) continue; // gerunds are handled by their own placement
+    const re = new RegExp(`(\\w+)?\\s*\\[\\[${b.id}\\]\\]\\s*(\\w+)?`);
+    const m = data.template.match(re);
+    if (!m) continue;
+    const before = m[1] || "";
+    const after = m[2] || "";
+    if (looksVerb(after) || looksVerb(before)) {
+      b.label = "adverb";
     }
   }
 
@@ -193,16 +218,75 @@ const FUNNY_WORD_SYSTEM =
   "Reply with ONLY the word (or a 2-word name/phrase if the hint asks for a name). " +
   "No quotes, no punctuation, no explanation. Lowercase unless it is a proper name.";
 
-function sanitizeWord(raw: string): string {
-  return String(raw || "")
+function sanitizeWord(raw: string, label = ""): string {
+  let w = String(raw || "")
     .split("\n")[0]
     .trim()
     .replace(/^["'“‘(]+|["'”’).,!?;:]+$/g, "")
     .trim()
     .slice(0, 40);
+  // Backstop against the model returning a whole phrase/clause instead of a word.
+  // Names/titles may be a few words; everything else is at most two.
+  const maxWords = /name|place|title|exclamation/i.test(label) ? 3 : 2;
+  const tokens = w.split(/\s+/).filter(Boolean);
+  if (tokens.length > maxWords) w = tokens.slice(0, maxWords).join(" ");
+  return w;
 }
 
-async function suggestOne(label: string, theme: string, avoid: string[] = []): Promise<string> {
+// Cross-request memory so the same "funny" words don't get recycled every story.
+const RECENT_MAX = 160;
+const recentWords: string[] = [];
+const recentSet = new Set<string>();
+function remember(words: string[]) {
+  for (const w of words) {
+    const k = (w || "").trim().toLowerCase();
+    if (!k || recentSet.has(k)) continue;
+    recentWords.push(k);
+    recentSet.add(k);
+  }
+  while (recentWords.length > RECENT_MAX) {
+    const old = recentWords.shift();
+    if (old) recentSet.delete(old);
+  }
+}
+function recentSample(n: number): string[] {
+  return recentWords.slice(-n);
+}
+
+// A random comedic "territory" nudges each fill somewhere new, fighting the
+// model's tendency to reach for the same handful of favorites.
+const ANGLES = [
+  "kitchen gadgets", "obscure animals", "types of weather", "musical instruments",
+  "old-timey jobs", "breakfast foods", "dance moves", "sea creatures",
+  "office supplies", "types of hats", "garden vegetables", "board games",
+  "clumsy sound effects", "fancy desserts", "camping gear", "gemstones",
+  "circus acts", "types of pasta", "bugs and insects", "space stuff",
+];
+function randomAngle(): string {
+  return ANGLES[Math.floor(Math.random() * ANGLES.length)];
+}
+
+// Pull the sentence that contains a token, with the token shown as "___".
+function sentenceFor(template: string, id: number): string {
+  const tok = `[[${id}]]`;
+  const idx = template.indexOf(tok);
+  if (idx === -1) return "";
+  const left = template.slice(0, idx);
+  const right = template.slice(idx + tok.length);
+  const lb = Math.max(left.lastIndexOf(". "), left.lastIndexOf("! "), left.lastIndexOf("? "), left.lastIndexOf("\n"));
+  const start = lb === -1 ? 0 : lb + 1;
+  const rm = right.match(/[.!?](\s|$)|\n/);
+  const end = rm ? (rm.index as number) + 1 : right.length;
+  return (left.slice(start) + "___" + right.slice(0, end)).trim();
+}
+
+async function suggestOne(
+  label: string,
+  theme: string,
+  avoid: string[] = [],
+  sentence = ""
+): Promise<string> {
+  const avoidAll = [...avoid, ...recentSample(50)];
   const msg = await ai.messages.create({
     model: MODEL,
     max_tokens: 24,
@@ -213,19 +297,109 @@ async function suggestOne(label: string, theme: string, avoid: string[] = []): P
         content:
           `Give me the funniest "${label}"` +
           (theme ? ` for a story about ${theme}` : "") +
-          `. Match the part of speech, but it can be totally random — funnier beats sensible.` +
-          (avoid.length ? ` It must be different from: ${avoid.join(", ")}.` : "") +
+          (sentence ? ` to drop into this sentence where the ___ is: "${sentence}"` : "") +
+          `. The word can be absurd and random, but it MUST fit the part of speech so the ` +
+          `sentence still reads correctly (no double verbs, no broken grammar). ` +
+          `Surprise me; lean toward ${randomAngle()} if it fits.` +
+          (avoidAll.length ? ` It must be different from: ${avoidAll.join(", ")}.` : "") +
           ` Just the word.`,
       },
     ],
   });
-  return sanitizeWord(msg.content.map((b: any) => (b.type === "text" ? b.text : "")).join(""));
+  return sanitizeWord(msg.content.map((b: any) => (b.type === "text" ? b.text : "")).join(""), label);
+}
+
+const CHECK_SYSTEM =
+  "You are a strict but fun editor checking Mad Libs fills. A fill is GOOD if the sentence " +
+  "reads as grammatically correct AND lands as funny/absurd. The word is allowed to be random " +
+  "and nonsensical in meaning — that's the joke — but the sentence must NOT be grammatically " +
+  "broken (e.g. two verbs in a row, wrong part of speech, a plural where a singular is needed). " +
+  "Any replacement you give must be a SINGLE word (or a short 2-3 word name) that fills ONLY the " +
+  "blank — NEVER a phrase, clause, or rewritten sentence. Reply with JSON only.";
+
+// Check one filled sentence; returns a replacement word if it reads badly.
+async function verifyInSentence(sentence: string, word: string, label: string) {
+  const filled = sentence.replace("___", word);
+  try {
+    const msg = await ai.messages.create({
+      model: MODEL,
+      max_tokens: 60,
+      system: CHECK_SYSTEM,
+      messages: [
+        {
+          role: "user",
+          content:
+            `Blank type: ${label}\nFilled sentence: "${filled}"\n\n` +
+            `Is it grammatically correct AND funny? If yes: {"ok":true}. ` +
+            `If the grammar is broken, reply {"ok":false,"better":"<a funnier word of the SAME type that makes the sentence read correctly>"}. JSON only.`,
+        },
+      ],
+    });
+    const text = msg.content.map((b: any) => (b.type === "text" ? b.text : "")).join("");
+    const v = extractJson(text);
+    return { ok: v?.ok !== false, better: sanitizeWord(v?.better || "", label) };
+  } catch {
+    return { ok: true, better: "" }; // never block a fill on a checker hiccup
+  }
+}
+
+// Batch-check every filled sentence for the Lucky button in a single call.
+async function verifyBatch(
+  template: string,
+  blanks: { id: number; label: string }[],
+  byId: Record<number, string>
+): Promise<Record<number, string>> {
+  const labelById: Record<number, string> = {};
+  blanks.forEach((b) => { labelById[b.id] = b.label; });
+  const lines = blanks.map((b) => {
+    const s = sentenceFor(template, b.id).replace("___", byId[b.id] || "___");
+    return `${b.id}. (${b.label}) "${s}"`;
+  });
+  try {
+    const msg = await ai.messages.create({
+      model: MODEL,
+      max_tokens: 500,
+      system: CHECK_SYSTEM,
+      messages: [
+        {
+          role: "user",
+          content:
+            `Check each filled Mad Libs sentence below. For any whose grammar is broken (e.g. two ` +
+            `verbs in a row, wrong part of speech), supply a funnier replacement of the SAME type ` +
+            `that reads correctly. Words may be absurd in meaning — only fix broken grammar.\n\n` +
+            lines.join("\n") +
+            `\n\nReply ONLY JSON: {"fixes":[{"id":<n>,"better":"<word>"}]} listing ONLY the ids that need fixing.`,
+        },
+      ],
+    });
+    const text = msg.content.map((b: any) => (b.type === "text" ? b.text : "")).join("");
+    const parsed = extractJson(text);
+    const fixes: Record<number, string> = {};
+    for (const f of parsed?.fixes ?? []) {
+      const id = Number(f?.id);
+      const better = sanitizeWord(f?.better || "", labelById[id] || "");
+      if (!Number.isNaN(id) && better) fixes[id] = better;
+    }
+    return fixes;
+  } catch {
+    return {};
+  }
 }
 
 // Fill every blank at once — one call for collective comedy, then repair any
 // missing/duplicate slots individually so no two fills are ever identical.
-async function fillAll(theme: string, blanks: { id: number; label: string }[]) {
-  const list = blanks.map((b) => `${b.id}. ${b.label}`).join("\n");
+async function fillAll(
+  theme: string,
+  blanks: { id: number; label: string }[],
+  template = ""
+) {
+  const list = blanks
+    .map((b) => {
+      const s = template ? sentenceFor(template, b.id) : "";
+      return s ? `${b.id}. ${b.label} — sentence: "${s}"` : `${b.id}. ${b.label}`;
+    })
+    .join("\n");
+  const recent = recentSample(70);
   let byId: Record<number, string> = {};
   try {
     const msg = await ai.messages.create({
@@ -239,7 +413,12 @@ async function fillAll(theme: string, blanks: { id: number; label: string }[]) {
             `Theme: ${theme || "(none)"}\n\n` +
             `Fill each blank below with the FUNNIEST word you can imagine. Each must match its ` +
             `part-of-speech hint, but can be totally random and absurd — humor over sense. ` +
-            `Every word MUST be different from all the others. Family-friendly.\n\n` +
+            `Every word MUST be different from all the others. Be wildly varied and avoid your ` +
+            `usual go-to jokes — for inspiration, roam through territory like ${randomAngle()}, ` +
+            `${randomAngle()}, and ${randomAngle()}. Family-friendly.\n\n` +
+            (recent.length
+              ? `Do NOT reuse any of these recently-used words: ${recent.join(", ")}.\n\n`
+              : "") +
             `Blanks:\n${list}\n\n` +
             `Return ONLY JSON: {"words":[{"id":<number>,"word":"<word>"}, ...]} with an entry for every id.`,
         },
@@ -247,12 +426,20 @@ async function fillAll(theme: string, blanks: { id: number; label: string }[]) {
     });
     const text = msg.content.map((b: any) => (b.type === "text" ? b.text : "")).join("");
     const parsed = extractJson(text);
+    const labelById: Record<number, string> = {};
+    blanks.forEach((b) => { labelById[b.id] = b.label; });
     for (const w of parsed?.words ?? []) {
       const id = Number(w?.id);
-      if (!Number.isNaN(id)) byId[id] = sanitizeWord(w?.word);
+      if (!Number.isNaN(id)) byId[id] = sanitizeWord(w?.word, labelById[id] || "");
     }
   } catch {
     byId = {};
+  }
+
+  // Check each fill back in its sentence; swap out any with broken grammar.
+  if (template) {
+    const fixes = await verifyBatch(template, blanks, byId);
+    for (const id of Object.keys(fixes)) byId[Number(id)] = fixes[Number(id)];
   }
 
   const seen = new Set<string>();
@@ -261,13 +448,14 @@ async function fillAll(theme: string, blanks: { id: number; label: string }[]) {
     let word = byId[b.id] || "";
     let guard = 0;
     while ((!word || seen.has(word.toLowerCase())) && guard < 3) {
-      word = await suggestOne(b.label, theme, [...seen]);
+      word = await suggestOne(b.label, theme, [...seen], template ? sentenceFor(template, b.id) : "");
       guard++;
     }
     if (!word || seen.has(word.toLowerCase())) word = (word || "thingamajig") + (out.length + 1);
     seen.add(word.toLowerCase());
     out.push({ id: b.id, word });
   }
+  remember(out.map((o) => o.word));
   return out;
 }
 
@@ -313,13 +501,22 @@ const server = {
         const body = await req.json().catch(() => ({}));
         const label = String(body?.label ?? "").trim().slice(0, 80);
         const theme = String(body?.theme ?? "").trim().slice(0, 200);
+        const template = String(body?.template ?? "");
+        const id = Number(body?.id);
         const avoid = Array.isArray(body?.avoid)
           ? body.avoid.map((w: any) => String(w).trim()).filter(Boolean).slice(0, 40)
           : [];
         if (!label) return Response.json({ error: "No label." }, { status: 400 });
 
-        const word = await suggestOne(label, theme, avoid);
+        const sentence = template && !Number.isNaN(id) ? sentenceFor(template, id) : "";
+        let word = await suggestOne(label, theme, avoid, sentence);
+        // Check the word back in its sentence; swap it if the grammar breaks.
+        if (sentence && word) {
+          const v = await verifyInSentence(sentence, word, label);
+          if (!v.ok && v.better) word = v.better;
+        }
         if (!word) return Response.json({ error: "No word." }, { status: 502 });
+        remember([word]);
         return Response.json({ word });
       } catch (err) {
         console.error("word failed:", err);
@@ -335,6 +532,7 @@ const server = {
         }
         const body = await req.json().catch(() => ({}));
         const theme = String(body?.theme ?? "").trim().slice(0, 200);
+        const template = String(body?.template ?? "");
         const blanks = Array.isArray(body?.blanks)
           ? body.blanks
               .map((b: any) => ({ id: Number(b?.id), label: String(b?.label ?? "").slice(0, 80) }))
@@ -343,7 +541,7 @@ const server = {
           : [];
         if (!blanks.length) return Response.json({ error: "No blanks." }, { status: 400 });
 
-        const words = await fillAll(theme, blanks);
+        const words = await fillAll(theme, blanks, template);
         return Response.json({ words });
       } catch (err) {
         console.error("fill failed:", err);
