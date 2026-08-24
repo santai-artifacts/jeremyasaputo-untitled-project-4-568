@@ -1,4 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
+import Database from "bun:sqlite";
+import { mkdirSync } from "node:fs";
 
 const publicDir = `${import.meta.dir}/public`;
 
@@ -6,6 +8,25 @@ const ai = new Anthropic({
   baseURL: process.env.SANTAI_AI_BASE_URL,
   apiKey: process.env.SANTAI_AI_TOKEN,
 });
+
+// --- Persistence (saved-story gallery) ---
+const dbPath = process.env.DATABASE_URL || "./data/app.db";
+try {
+  const dir = dbPath.slice(0, dbPath.lastIndexOf("/"));
+  if (dir) mkdirSync(dir, { recursive: true });
+} catch {}
+const db = new Database(dbPath);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS stories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    template TEXT NOT NULL,
+    blanks TEXT NOT NULL,
+    vals TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )
+`);
 
 const MODEL = "anthropic-claude-bedrock4.5-haiku";
 
@@ -194,6 +215,60 @@ const server = {
           { status: 500 }
         );
       }
+    }
+
+    // --- Saved-story gallery ---
+    if (url.pathname === "/api/stories" && req.method === "GET") {
+      const rows = db
+        .query("SELECT * FROM stories ORDER BY id DESC")
+        .all() as any[];
+      const stories = rows.map((r) => ({
+        id: r.id,
+        title: r.title,
+        prompt: r.prompt,
+        template: r.template,
+        blanks: JSON.parse(r.blanks),
+        values: JSON.parse(r.vals),
+        created_at: r.created_at,
+      }));
+      return Response.json({ stories });
+    }
+
+    if (url.pathname === "/api/stories" && req.method === "POST") {
+      try {
+        const body = await req.json().catch(() => ({}));
+        const title = String(body?.title ?? "").trim().slice(0, 200) || "Untitled";
+        const prompt = String(body?.prompt ?? "").trim().slice(0, 300);
+        const template = String(body?.template ?? "");
+        const blanks = body?.blanks;
+        const values = body?.values;
+        if (!template || !Array.isArray(blanks) || !Array.isArray(values)) {
+          return Response.json({ error: "Nothing to save." }, { status: 400 });
+        }
+        const created_at = new Date().toISOString();
+        const info = db
+          .query(
+            "INSERT INTO stories (title, prompt, template, blanks, vals, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+          )
+          .run(
+            title,
+            prompt,
+            template,
+            JSON.stringify(blanks),
+            JSON.stringify(values),
+            created_at
+          );
+        return Response.json({ id: Number(info.lastInsertRowid), created_at });
+      } catch (err) {
+        console.error("save failed:", err);
+        return Response.json({ error: "Couldn't save story." }, { status: 500 });
+      }
+    }
+
+    const delMatch = url.pathname.match(/^\/api\/stories\/(\d+)$/);
+    if (delMatch && req.method === "DELETE") {
+      db.query("DELETE FROM stories WHERE id = ?").run(Number(delMatch[1]));
+      return Response.json({ ok: true });
     }
 
     // Static files

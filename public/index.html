@@ -20,13 +20,43 @@
     font-size: 20px;
     line-height: 1.25;
     -webkit-font-smoothing: antialiased;
-    padding: 60px 24px 120px;
+    padding: 34px 24px 120px;
   }
   .wrap { max-width: 700px; margin: 0 auto; }
 
+  /* top nav */
+  nav.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--ink);
+    margin-bottom: 54px;
+  }
+  nav.top .brand {
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  nav.top .links { display: flex; gap: 22px; }
+  nav.top .navlink {
+    font: inherit;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: none; border: none; padding: 0; cursor: pointer;
+  }
+  nav.top .navlink.active {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    text-decoration-thickness: 1px;
+  }
+
   /* header */
-  .masthead { margin-bottom: 54px; }
-  .flower { font-size: 22px; display: block; margin-bottom: 18px; }
+  .masthead { margin-bottom: 48px; }
   h1 {
     font-size: 64px;
     line-height: 1;
@@ -34,225 +64,185 @@
     letter-spacing: -0.01em;
     margin: 0 0 14px;
   }
-  .lede { font-size: 20px; color: var(--ink); margin: 0; max-width: 30em; }
+  .lede { font-size: 20px; margin: 0; max-width: 30em; }
 
   /* step line */
   .stepline {
-    display: flex;
-    gap: 20px;
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 40px;
+    display: flex; gap: 20px;
+    font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 40px;
   }
-  .stepline span { display: inline-flex; gap: 8px; }
-  .stepline .dot.active { color: var(--ink); }
-  .stepline .dot.done { color: var(--ink); }
+  .stepline .dot.active, .stepline .dot.done { color: var(--ink); }
   .stepline .dot.done::before { content: "✿ "; }
 
-  /* type */
   label.field-label {
-    display: block;
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 14px;
+    display: block; font-size: 12px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
   }
 
   textarea, input[type="text"] {
     width: 100%;
-    font-family: inherit;
-    font-size: 26px;
-    line-height: 1.25;
-    color: var(--ink);
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--line);
-    border-radius: 0;
-    padding: 8px 0;
-    outline: none;
+    font-family: inherit; font-size: 26px; line-height: 1.25;
+    color: var(--ink); background: transparent;
+    border: none; border-bottom: 1px solid var(--line); border-radius: 0;
+    padding: 8px 0; outline: none;
   }
-  textarea {
-    resize: none;
-    min-height: 44px;
-    overflow: hidden;
-  }
+  textarea { resize: none; min-height: 44px; overflow: hidden; }
   textarea::placeholder, input::placeholder { color: var(--faint); }
   input[type="text"]:focus, textarea:focus { border-bottom-color: var(--ink); }
 
-  /* chips = plain inline suggestions */
-  .chips {
-    margin: 22px 0 0;
-    font-size: 15px;
-    color: var(--muted);
-    line-height: 1.7;
-  }
+  .chips { margin: 22px 0 0; font-size: 15px; color: var(--muted); line-height: 1.7; }
   .chips .lbl { text-transform: uppercase; letter-spacing: 0.06em; font-size: 12px; }
   .chip {
-    font: inherit;
-    font-size: 15px;
-    background: none;
-    border: none;
-    padding: 0;
-    color: var(--ink);
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    text-decoration-thickness: 1px;
+    font: inherit; font-size: 15px; background: none; border: none; padding: 0;
+    color: var(--ink); cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
   }
   .chip:hover { color: var(--muted); }
-  .chip + .chip { margin-left: 2px; }
   .chip-sep { color: var(--faint); }
 
-  /* buttons — bare bordered box, invert on hover */
   button.primary, button.ghost {
-    font-family: inherit;
-    font-size: 15px;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    padding: 13px 26px;
-    border: 1px solid var(--ink);
-    background: var(--paper);
-    color: var(--ink);
-    cursor: pointer;
-    border-radius: 0;
+    font-family: inherit; font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 13px 26px; border: 1px solid var(--ink);
+    background: var(--paper); color: var(--ink); cursor: pointer; border-radius: 0;
     transition: background .15s, color .15s;
   }
   button.primary:hover, button.ghost:hover { background: var(--ink); color: var(--paper); }
   button.primary:disabled { opacity: .35; cursor: not-allowed; background: var(--paper); color: var(--ink); }
 
   .actions { margin-top: 40px; display: flex; gap: 14px; flex-wrap: wrap; }
-
   .hidden { display: none !important; }
 
   /* blanks */
   .blank-grid { display: grid; gap: 28px; }
   .blank { display: grid; gap: 8px; }
-  .blank .hint {
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
+  .blank .hint { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .blank .hint .num { color: var(--faint); margin-right: 10px; }
 
   /* loading */
   .loader { padding: 10px 0; display: flex; align-items: baseline; gap: 12px; }
   .loader .spin { display: inline-block; animation: spin 1.4s linear infinite; }
-  .loader p { margin: 0; font-size: 20px; color: var(--ink); }
+  .loader p { margin: 0; font-size: 20px; }
 
   /* story */
-  .story-title {
-    font-size: 40px;
-    line-height: 1.05;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    margin: 0 0 30px;
-  }
+  .story-title { font-size: 40px; line-height: 1.05; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 30px; }
   .story { font-size: 24px; line-height: 1.5; }
   .story p { margin: 0 0 1.1em; }
-  .story .fill {
-    font-weight: 700;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    text-decoration-thickness: 1px;
-  }
+  .story p:last-child { margin-bottom: 0; }
+  .story .fill { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 
-  .error {
-    margin-top: 18px;
-    font-size: 15px;
-    color: var(--ink);
-    border-left: 2px solid var(--ink);
-    padding-left: 12px;
+  .error { margin-top: 18px; font-size: 15px; border-left: 2px solid var(--ink); padding-left: 12px; }
+
+  /* gallery */
+  .gallery-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 40px; }
+  .gallery-head h2 { font-size: 40px; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+  .gallery-head .count { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .empty { color: var(--muted); font-size: 20px; padding: 20px 0; }
+  .entry { padding: 34px 0; border-top: 1px solid var(--faint); }
+  .entry:first-child { border-top: none; padding-top: 0; }
+  .entry-meta { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .entry-title { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 16px; }
+  .entry .story { font-size: 19px; line-height: 1.5; }
+  .entry-actions { margin-top: 16px; font-size: 13px; color: var(--muted); }
+  .linkbtn {
+    font: inherit; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase;
+    background: none; border: none; padding: 0; color: var(--ink); cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px;
   }
+  .linkbtn:hover { color: var(--muted); }
+  .entry-actions .sep { color: var(--faint); margin: 0 8px; }
 
   .toast {
-    position: fixed;
-    bottom: 28px; left: 50%;
-    transform: translateX(-50%) translateY(16px);
-    background: var(--ink); color: var(--paper);
-    padding: 10px 20px; font-size: 13px;
-    letter-spacing: 0.04em; text-transform: uppercase;
-    opacity: 0; pointer-events: none; transition: .25s;
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px);
+    background: var(--ink); color: var(--paper); padding: 10px 20px; font-size: 13px;
+    letter-spacing: 0.04em; text-transform: uppercase; opacity: 0; pointer-events: none; transition: .25s;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  footer {
-    margin-top: 80px;
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
+  footer { margin-top: 80px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
   @media (max-width: 560px) {
-    body { padding: 40px 20px 90px; font-size: 18px; }
+    body { padding: 24px 20px 90px; font-size: 18px; }
     h1 { font-size: 44px; }
-    .story-title { font-size: 30px; }
+    .story-title, .gallery-head h2 { font-size: 30px; }
     .story { font-size: 21px; }
     textarea, input[type="text"] { font-size: 22px; }
+    nav.top { margin-bottom: 40px; }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="masthead">
-    <span class="flower">✿</span>
-    <h1>Mad Libs</h1>
-    <p class="lede">Name a theme. A story is written around it — then you fill in the blanks.</p>
+  <nav class="top">
+    <span class="brand">✿ Mad Libs</span>
+    <div class="links">
+      <button class="navlink active" id="navWrite">Write</button>
+      <button class="navlink" id="navGallery">Gallery</button>
+    </div>
+  </nav>
+
+  <!-- ============ WRITE VIEW ============ -->
+  <div id="view-write">
+    <div class="masthead">
+      <h1>Mad Libs</h1>
+      <p class="lede">Name a theme. A story is written around it — then you fill in the blanks.</p>
+    </div>
+
+    <div class="stepline" id="steps">
+      <span class="dot active" data-step="1">Theme</span>
+      <span class="dot" data-step="2">Words</span>
+      <span class="dot" data-step="3">Story</span>
+    </div>
+
+    <!-- STEP 1 -->
+    <section id="step1">
+      <label class="field-label" for="prompt">What should your story be about?</label>
+      <textarea id="prompt" rows="1" placeholder="a cat who becomes a spaceship captain"></textarea>
+      <div class="chips" id="chips"></div>
+      <div class="actions"><button class="primary" id="genBtn">Write it</button></div>
+      <div id="err1"></div>
+    </section>
+
+    <!-- LOADING -->
+    <section id="loading" class="hidden">
+      <div class="loader"><span class="spin">✿</span><p id="loadMsg">Writing your story…</p></div>
+    </section>
+
+    <!-- STEP 2 -->
+    <section id="step2" class="hidden">
+      <label class="field-label">Fill in the blanks — no peeking at the story</label>
+      <div class="blank-grid" id="blanks"></div>
+      <div class="actions">
+        <button class="primary" id="revealBtn">Reveal story</button>
+        <button class="ghost" id="backBtn">New theme</button>
+      </div>
+      <div id="err2"></div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section id="step3" class="hidden">
+      <h2 class="story-title" id="storyTitle"></h2>
+      <div class="story" id="storyText"></div>
+      <div class="actions">
+        <button class="primary" id="saveBtn">Save to gallery</button>
+        <button class="ghost" id="copyBtn">Copy</button>
+        <button class="ghost" id="editBtn">Edit words</button>
+        <button class="ghost" id="againBtn">Start over</button>
+      </div>
+    </section>
   </div>
 
-  <div class="stepline" id="steps">
-    <span class="dot active" data-step="1">Theme</span>
-    <span class="dot" data-step="2">Words</span>
-    <span class="dot" data-step="3">Story</span>
+  <!-- ============ GALLERY VIEW ============ -->
+  <div id="view-gallery" class="hidden">
+    <div class="gallery-head">
+      <h2>Saved Stories</h2>
+      <span class="count" id="galleryCount"></span>
+    </div>
+    <div id="galleryList"></div>
   </div>
-
-  <!-- STEP 1 -->
-  <section id="step1">
-    <label class="field-label" for="prompt">What should your story be about?</label>
-    <textarea id="prompt" rows="1" placeholder="a cat who becomes a spaceship captain"></textarea>
-    <div class="chips" id="chips"></div>
-    <div class="actions">
-      <button class="primary" id="genBtn">Write it</button>
-    </div>
-    <div id="err1"></div>
-  </section>
-
-  <!-- LOADING -->
-  <section id="loading" class="hidden">
-    <div class="loader">
-      <span class="spin">✿</span>
-      <p id="loadMsg">Writing your story…</p>
-    </div>
-  </section>
-
-  <!-- STEP 2 -->
-  <section id="step2" class="hidden">
-    <label class="field-label">Fill in the blanks — no peeking at the story</label>
-    <div class="blank-grid" id="blanks"></div>
-    <div class="actions">
-      <button class="primary" id="revealBtn">Reveal story</button>
-      <button class="ghost" id="backBtn">New theme</button>
-    </div>
-    <div id="err2"></div>
-  </section>
-
-  <!-- STEP 3 -->
-  <section id="step3" class="hidden">
-    <h2 class="story-title" id="storyTitle"></h2>
-    <div class="story" id="storyText"></div>
-    <div class="actions">
-      <button class="primary" id="copyBtn">Copy</button>
-      <button class="ghost" id="editBtn">Edit words</button>
-      <button class="ghost" id="againBtn">Start over</button>
-    </div>
-  </section>
 
   <footer>✿ Stories freshly written by AI</footer>
 </div>
@@ -261,7 +251,7 @@
 
 <script>
   const el = (id) => document.getElementById(id);
-  const state = { data: null, values: [] };
+  const state = { data: null, values: [], prompt: "", savedId: null };
 
   const SUGGESTIONS = [
     "a dragon who opens a bakery",
@@ -271,7 +261,7 @@
     "an underwater rock concert",
   ];
 
-  // suggestion links (bare, inline)
+  /* ---------- suggestions ---------- */
   const chips = el("chips");
   chips.innerHTML = '<span class="lbl">Try&nbsp;&nbsp;</span>';
   SUGGESTIONS.forEach((s, i) => {
@@ -282,10 +272,23 @@
     chips.appendChild(b);
   });
 
-  // auto-grow textarea
   function autoGrow(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }
   el("prompt").addEventListener("input", () => autoGrow(el("prompt")));
 
+  /* ---------- view switching ---------- */
+  function showView(which) {
+    const write = which === "write";
+    el("view-write").classList.toggle("hidden", !write);
+    el("view-gallery").classList.toggle("hidden", write);
+    el("navWrite").classList.toggle("active", write);
+    el("navGallery").classList.toggle("active", !write);
+    if (!write) loadGallery();
+    window.scrollTo({ top: 0 });
+  }
+  el("navWrite").onclick = () => showView("write");
+  el("navGallery").onclick = () => showView("gallery");
+
+  /* ---------- step flow ---------- */
   function setStep(n) {
     ["step1","loading","step2","step3"].forEach((s) => el(s).classList.add("hidden"));
     document.querySelectorAll("#steps .dot").forEach((d) => {
@@ -302,16 +305,10 @@
   function showError(where, msg) { el(where).innerHTML = '<div class="error">' + msg + '</div>'; }
   function clearError(where) { el(where).innerHTML = ""; }
 
-  const loadMessages = [
-    "Writing your story…",
-    "Sharpening the pencils…",
-    "Hiding the punchline…",
-    "Counting the blanks…",
-  ];
+  const loadMessages = ["Writing your story…","Sharpening the pencils…","Hiding the punchline…","Counting the blanks…"];
   let loadTimer = null;
   function cycleLoader() {
-    let i = 0;
-    el("loadMsg").textContent = loadMessages[0];
+    let i = 0; el("loadMsg").textContent = loadMessages[0];
     loadTimer = setInterval(() => { i = (i + 1) % loadMessages.length; el("loadMsg").textContent = loadMessages[i]; }, 1600);
   }
 
@@ -319,30 +316,22 @@
     const prompt = el("prompt").value.trim();
     clearError("err1");
     if (!prompt) { showError("err1", "Give me a theme to work with."); return; }
-
-    setStep(1.5);
-    cycleLoader();
-    el("genBtn").disabled = true;
-
+    setStep(1.5); cycleLoader(); el("genBtn").disabled = true;
     try {
       const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Something went wrong.");
-
-      state.data = data;
-      state.values = data.blanks.map(() => "");
+      state.data = data; state.values = data.blanks.map(() => ""); state.prompt = prompt; state.savedId = null;
       renderBlanks();
       setStep(2);
     } catch (e) {
       setStep(1);
       showError("err1", e.message || "Couldn't reach the story machine. Try again.");
     } finally {
-      clearInterval(loadTimer);
-      el("genBtn").disabled = false;
+      clearInterval(loadTimer); el("genBtn").disabled = false;
     }
   }
 
@@ -358,7 +347,7 @@
         '<input type="text" id="b' + i + '" autocomplete="off" />';
       const input = div.querySelector("input");
       input.value = state.values[i] || "";
-      input.addEventListener("input", () => { state.values[i] = input.value; });
+      input.addEventListener("input", () => { state.values[i] = input.value; state.savedId = null; });
       input.addEventListener("keydown", (ev) => {
         if (ev.key === "Enter") {
           ev.preventDefault();
@@ -371,34 +360,86 @@
     setTimeout(() => { const f = wrap.querySelector("input"); if (f) f.focus(); }, 60);
   }
 
+  /* ---------- the smart assembler ----------
+     Walks the template, dropping filled words in with:
+       • capitalization when the blank starts a sentence
+       • punctuation de-duplication (wowza! + "!" => Wowza!)
+     Used for the reveal, the copy text, and every gallery entry. */
+  const OPEN_QUOTES = ['"', "'", "“", "‘", "(", "["];
+  const TERMINALS = new Set([".", "!", "?", ",", ";", ":"]);
+
+  function assemble(data, values) {
+    const byId = {};
+    data.blanks.forEach((b, i) => { byId[b.id] = (values[i] != null ? String(values[i]) : "").trim(); });
+
+    // tokenize into ordered literal/token nodes
+    const seq = [];
+    const re = /\[\[(\d+)\]\]/g;
+    let last = 0, m;
+    while ((m = re.exec(data.template)) !== null) {
+      if (m.index > last) seq.push({ t: "lit", s: data.template.slice(last, m.index) });
+      seq.push({ t: "tok", id: Number(m[1]) });
+      last = m.index + m[0].length;
+    }
+    if (last < data.template.length) seq.push({ t: "lit", s: data.template.slice(last) });
+
+    const parts = [];
+    let emitted = "";
+    for (let i = 0; i < seq.length; i++) {
+      const node = seq[i];
+      if (node.t === "lit") { parts.push({ text: node.s, fill: false }); emitted += node.s; continue; }
+
+      let val = byId[node.id] || "";
+
+      // capitalization: sentence start?
+      let e = emitted.replace(/\s+$/, "");
+      const newlineBefore = /\n\s*$/.test(emitted);
+      if (e && OPEN_QUOTES.includes(e[e.length - 1])) e = e.slice(0, -1);
+      const lastChar = e.slice(-1);
+      const sentenceStart = e === "" || newlineBefore || lastChar === "." || lastChar === "!" || lastChar === "?";
+      if (sentenceStart && val) {
+        const idx = val.search(/[A-Za-z]/);
+        if (idx !== -1) val = val.slice(0, idx) + val[idx].toUpperCase() + val.slice(idx + 1);
+      }
+
+      // punctuation dedup: if the word already ends a sentence, drop the template's next mark
+      if (TERMINALS.has(val.slice(-1))) {
+        const next = seq[i + 1];
+        if (next && next.t === "lit" && next.s.length && TERMINALS.has(next.s[0])) {
+          next.s = next.s.slice(1);
+        }
+      }
+
+      parts.push({ text: val, fill: true });
+      emitted += val;
+    }
+    return { parts, plain: parts.map((p) => p.text).join("") };
+  }
+
+  function storyHTML(data, values) {
+    const { parts } = assemble(data, values);
+    let html = "";
+    for (const p of parts) {
+      if (p.fill) html += '<span class="fill">' + escapeHtml(p.text) + "</span>";
+      else html += escapeHtml(p.text).replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>");
+    }
+    return "<p>" + html + "</p>";
+  }
+
   function revealStory() {
     clearError("err2");
     const missing = state.values.findIndex((v) => !v.trim());
     if (missing !== -1) {
       showError("err2", "Fill in every blank first — number " + String(missing+1).padStart(2,"0") + " is empty.");
-      const inp = el("b" + missing);
-      if (inp) inp.focus();
+      const inp = el("b" + missing); if (inp) inp.focus();
       return;
     }
-
-    let html = escapeHtml(state.data.template);
-    state.data.blanks.forEach((b, i) => {
-      const token = "[[" + b.id + "]]";
-      const val = '<span class="fill">' + escapeHtml(state.values[i].trim()) + "</span>";
-      html = html.split(token).join(val);
-    });
-    html = html.replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>");
-
     el("storyTitle").textContent = state.data.title;
-    el("storyText").innerHTML = "<p>" + html + "</p>";
+    el("storyText").innerHTML = storyHTML(state.data, state.values);
+    el("saveBtn").disabled = false;
+    el("saveBtn").textContent = "Save to gallery";
     setStep(3);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function plainStory() {
-    let text = state.data.template;
-    state.data.blanks.forEach((b, i) => { text = text.split("[[" + b.id + "]]").join(state.values[i].trim()); });
-    return state.data.title + "\n\n" + text;
   }
 
   function escapeHtml(s) {
@@ -406,9 +447,7 @@
   }
 
   function toast(msg) {
-    const t = el("toast");
-    t.textContent = msg;
-    t.classList.add("show");
+    const t = el("toast"); t.textContent = msg; t.classList.add("show");
     setTimeout(() => t.classList.remove("show"), 1800);
   }
 
@@ -420,15 +459,82 @@
       const ta = document.createElement("textarea");
       ta.value = text; ta.setAttribute("readonly", "");
       ta.style.position = "fixed"; ta.style.top = "-1000px"; ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select(); ta.setSelectionRange(0, text.length);
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      return ok;
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand("copy"); document.body.removeChild(ta); return ok;
     } catch { return false; }
   }
 
-  // wire up
+  /* ---------- save + gallery ---------- */
+  async function saveStory() {
+    if (!state.data) return;
+    if (state.savedId) { toast("Already saved"); return; }
+    el("saveBtn").disabled = true;
+    try {
+      const res = await fetch("/api/stories", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: state.data.title, prompt: state.prompt,
+          template: state.data.template, blanks: state.data.blanks, values: state.values,
+        }),
+      });
+      const out = await res.json();
+      if (!res.ok) throw new Error(out.error || "Couldn't save.");
+      state.savedId = out.id;
+      el("saveBtn").textContent = "Saved ✿";
+      toast("Saved to gallery");
+    } catch (e) {
+      el("saveBtn").disabled = false;
+      toast(e.message || "Couldn't save");
+    }
+  }
+
+  function fmtDate(iso) {
+    try { return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); }
+    catch { return ""; }
+  }
+
+  async function loadGallery() {
+    const listEl = el("galleryList");
+    listEl.innerHTML = '<div class="empty">Loading…</div>';
+    try {
+      const res = await fetch("/api/stories");
+      const { stories } = await res.json();
+      el("galleryCount").textContent = stories.length ? stories.length + (stories.length === 1 ? " story" : " stories") : "";
+      if (!stories.length) {
+        listEl.innerHTML = '<div class="empty">No saved stories yet. Write one, then hit “Save to gallery.”</div>';
+        return;
+      }
+      listEl.innerHTML = "";
+      stories.forEach((s) => {
+        const art = document.createElement("article");
+        art.className = "entry";
+        const meta = s.prompt ? (s.prompt + " — " + fmtDate(s.created_at)) : fmtDate(s.created_at);
+        art.innerHTML =
+          '<div class="entry-meta">' + escapeHtml(meta) + '</div>' +
+          '<h3 class="entry-title">' + escapeHtml(s.title) + '</h3>' +
+          '<div class="story">' + storyHTML(s, s.values) + '</div>' +
+          '<div class="entry-actions">' +
+            '<button class="linkbtn" data-act="copy">Copy</button>' +
+            '<span class="sep">·</span>' +
+            '<button class="linkbtn" data-act="remove">Remove</button>' +
+          '</div>';
+        art.querySelector('[data-act="copy"]').onclick = async () => {
+          const ok = await copyText(assemble(s, s.values).plain
+            ? s.title + "\n\n" + assemble(s, s.values).plain : s.title);
+          toast(ok ? "Copied" : "Copy blocked");
+        };
+        art.querySelector('[data-act="remove"]').onclick = async () => {
+          await fetch("/api/stories/" + s.id, { method: "DELETE" });
+          loadGallery();
+        };
+        listEl.appendChild(art);
+      });
+    } catch {
+      listEl.innerHTML = '<div class="empty">Couldn’t load the gallery.</div>';
+    }
+  }
+
+  /* ---------- wire up ---------- */
   el("genBtn").onclick = generate;
   el("prompt").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); }
@@ -437,14 +543,13 @@
   el("backBtn").onclick = () => setStep(1);
   el("editBtn").onclick = () => { renderBlanks(); setStep(2); };
   el("againBtn").onclick = () => { el("prompt").value = ""; autoGrow(el("prompt")); setStep(1); el("prompt").focus(); };
+  el("saveBtn").onclick = saveStory;
   el("copyBtn").onclick = async () => {
-    const ok = await copyText(plainStory());
+    const ok = await copyText(state.data.title + "\n\n" + assemble(state.data, state.values).plain);
     toast(ok ? "Copied" : "Copy blocked — select the story to copy");
     if (!ok) {
-      const range = document.createRange();
-      range.selectNodeContents(el("storyText"));
-      const sel = window.getSelection();
-      sel.removeAllRanges(); sel.addRange(range);
+      const range = document.createRange(); range.selectNodeContents(el("storyText"));
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
     }
   };
 </script>
