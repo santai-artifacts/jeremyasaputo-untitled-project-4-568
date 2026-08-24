@@ -184,6 +184,93 @@ async function generate(prompt: string) {
   throw lastErr;
 }
 
+// --- Funny single-word suggestions (shared by /api/word and /api/fill) ---
+const FUNNY_WORD_SYSTEM =
+  "You suggest the FUNNIEST possible word for a Mad Libs blank — absurd, unexpected, " +
+  "delightfully random. It MUST fit the grammatical part of speech named in the hint " +
+  "(a noun stays a noun, a verb stays a verb, etc.), but it does NOT need to make logical " +
+  "sense in the story — the sillier the better. Family-friendly, nothing offensive. " +
+  "Reply with ONLY the word (or a 2-word name/phrase if the hint asks for a name). " +
+  "No quotes, no punctuation, no explanation. Lowercase unless it is a proper name.";
+
+function sanitizeWord(raw: string): string {
+  return String(raw || "")
+    .split("\n")[0]
+    .trim()
+    .replace(/^["'“‘(]+|["'”’).,!?;:]+$/g, "")
+    .trim()
+    .slice(0, 40);
+}
+
+async function suggestOne(label: string, theme: string, avoid: string[] = []): Promise<string> {
+  const msg = await ai.messages.create({
+    model: MODEL,
+    max_tokens: 24,
+    system: FUNNY_WORD_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content:
+          `Give me the funniest "${label}"` +
+          (theme ? ` for a story about ${theme}` : "") +
+          `. Match the part of speech, but it can be totally random — funnier beats sensible.` +
+          (avoid.length ? ` It must be different from: ${avoid.join(", ")}.` : "") +
+          ` Just the word.`,
+      },
+    ],
+  });
+  return sanitizeWord(msg.content.map((b: any) => (b.type === "text" ? b.text : "")).join(""));
+}
+
+// Fill every blank at once — one call for collective comedy, then repair any
+// missing/duplicate slots individually so no two fills are ever identical.
+async function fillAll(theme: string, blanks: { id: number; label: string }[]) {
+  const list = blanks.map((b) => `${b.id}. ${b.label}`).join("\n");
+  let byId: Record<number, string> = {};
+  try {
+    const msg = await ai.messages.create({
+      model: MODEL,
+      max_tokens: 900,
+      system: FUNNY_WORD_SYSTEM,
+      messages: [
+        {
+          role: "user",
+          content:
+            `Theme: ${theme || "(none)"}\n\n` +
+            `Fill each blank below with the FUNNIEST word you can imagine. Each must match its ` +
+            `part-of-speech hint, but can be totally random and absurd — humor over sense. ` +
+            `Every word MUST be different from all the others. Family-friendly.\n\n` +
+            `Blanks:\n${list}\n\n` +
+            `Return ONLY JSON: {"words":[{"id":<number>,"word":"<word>"}, ...]} with an entry for every id.`,
+        },
+      ],
+    });
+    const text = msg.content.map((b: any) => (b.type === "text" ? b.text : "")).join("");
+    const parsed = extractJson(text);
+    for (const w of parsed?.words ?? []) {
+      const id = Number(w?.id);
+      if (!Number.isNaN(id)) byId[id] = sanitizeWord(w?.word);
+    }
+  } catch {
+    byId = {};
+  }
+
+  const seen = new Set<string>();
+  const out: { id: number; word: string }[] = [];
+  for (const b of blanks) {
+    let word = byId[b.id] || "";
+    let guard = 0;
+    while ((!word || seen.has(word.toLowerCase())) && guard < 3) {
+      word = await suggestOne(b.label, theme, [...seen]);
+      guard++;
+    }
+    if (!word || seen.has(word.toLowerCase())) word = (word || "thingamajig") + (out.length + 1);
+    seen.add(word.toLowerCase());
+    out.push({ id: b.id, word });
+  }
+  return out;
+}
+
 const server = {
   port: process.env.PORT || 3000,
   async fetch(req: Request) {
@@ -231,39 +318,36 @@ const server = {
           : [];
         if (!label) return Response.json({ error: "No label." }, { status: 400 });
 
-        const msg = await ai.messages.create({
-          model: MODEL,
-          max_tokens: 24,
-          system:
-            "You suggest one playful, family-friendly word for a Mad Libs blank. " +
-            "Reply with ONLY the word (or a 2-word name/phrase if the hint asks for a name). " +
-            "No quotes, no punctuation, no explanation. Lowercase unless it's a proper name.",
-          messages: [
-            {
-              role: "user",
-              content:
-                `Give me one "${label}"` +
-                (theme ? ` that would be funny in a story about ${theme}.` : ".") +
-                (avoid.length
-                  ? ` It must be DIFFERENT from every one of these already-used words: ${avoid.join(", ")}.`
-                  : "") +
-                ` Just the word.`,
-            },
-          ],
-        });
-        let word = msg.content
-          .map((b: any) => (b.type === "text" ? b.text : ""))
-          .join("")
-          .split("\n")[0]
-          .trim()
-          .replace(/^["'“‘(]+|["'”’).,!?;:]+$/g, "")
-          .trim()
-          .slice(0, 40);
+        const word = await suggestOne(label, theme, avoid);
         if (!word) return Response.json({ error: "No word." }, { status: 502 });
         return Response.json({ word });
       } catch (err) {
         console.error("word failed:", err);
         return Response.json({ error: "Couldn't think of one." }, { status: 500 });
+      }
+    }
+
+    // --- Fill every blank at once ("I'm feeling lucky") ---
+    if (url.pathname === "/api/fill" && req.method === "POST") {
+      try {
+        if (!process.env.SANTAI_AI_TOKEN) {
+          return Response.json({ error: "AI is not configured." }, { status: 503 });
+        }
+        const body = await req.json().catch(() => ({}));
+        const theme = String(body?.theme ?? "").trim().slice(0, 200);
+        const blanks = Array.isArray(body?.blanks)
+          ? body.blanks
+              .map((b: any) => ({ id: Number(b?.id), label: String(b?.label ?? "").slice(0, 80) }))
+              .filter((b: any) => !Number.isNaN(b.id) && b.label)
+              .slice(0, 20)
+          : [];
+        if (!blanks.length) return Response.json({ error: "No blanks." }, { status: 400 });
+
+        const words = await fillAll(theme, blanks);
+        return Response.json({ words });
+      } catch (err) {
+        console.error("fill failed:", err);
+        return Response.json({ error: "Couldn't fill them in." }, { status: 500 });
       }
     }
 

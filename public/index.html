@@ -236,6 +236,7 @@
       <div class="blank-grid" id="blanks"></div>
       <div class="actions">
         <button class="primary" id="revealBtn">Reveal story</button>
+        <button class="ghost" id="luckyBtn">✿ I'm feeling lucky</button>
         <button class="ghost" id="backBtn">New theme</button>
       </div>
       <div id="err2"></div>
@@ -472,6 +473,35 @@
     }
   }
 
+  async function fillLucky() {
+    if (!state.data) return;
+    const btn = el("luckyBtn");
+    const orig = btn.textContent;
+    btn.disabled = true; el("revealBtn").disabled = true;
+    btn.textContent = "Thinking…";
+    clearError("err2");
+    try {
+      const res = await fetch("/api/fill", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ theme: state.prompt, blanks: state.data.blanks }),
+      });
+      const out = await res.json();
+      if (!res.ok || !Array.isArray(out.words)) throw new Error(out.error || "Couldn't fill them in");
+      const byId = {};
+      out.words.forEach((w) => { byId[w.id] = w.word; });
+      state.data.blanks.forEach((b, i) => {
+        const w = byId[b.id];
+        if (w != null) { state.values[i] = w; const inp = el("b" + i); if (inp) inp.value = w; }
+      });
+      state.savedId = null;
+      revealStory();
+    } catch (e) {
+      showError("err2", (e && e.message) || "Couldn't fill them in. Try again.");
+    } finally {
+      btn.disabled = false; el("revealBtn").disabled = false; btn.textContent = orig;
+    }
+  }
+
   /* ---------- the smart assembler ----------
      Walks the template, dropping filled words in with:
        • capitalization when the blank starts a sentence
@@ -652,6 +682,7 @@
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); }
   });
   el("revealBtn").onclick = revealStory;
+  el("luckyBtn").onclick = fillLucky;
   el("backBtn").onclick = () => setStep(1);
   el("editBtn").onclick = () => { renderBlanks(); setStep(2); };
   el("againBtn").onclick = () => { el("prompt").value = ""; autoGrow(el("prompt")); setStep(1); el("prompt").focus(); };
