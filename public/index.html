@@ -3,297 +3,261 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Mad Libs Machine</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Kalam:wght@400;700&display=swap" rel="stylesheet" />
+<title>Mad Libs</title>
 <style>
   :root {
-    --bg1: #ffe9f3;
-    --bg2: #e7ecff;
-    --ink: #241c33;
-    --muted: #6b6480;
-    --card: #ffffff;
-    --accent: #ff5aa7;
-    --accent2: #7c5cff;
-    --accent3: #ffb340;
-    --line: #efe9f7;
-    --ok: #21c17a;
-    --shadow: 0 20px 45px -18px rgba(88, 50, 140, 0.45);
-    --radius: 22px;
+    --ink: #000;
+    --paper: #fff;
+    --muted: #8a8a8a;
+    --line: #000;
+    --faint: #e2e2e2;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; }
+  html, body { margin: 0; background: var(--paper); }
   body {
-    font-family: "Fredoka", system-ui, sans-serif;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     color: var(--ink);
-    min-height: 100vh;
-    background:
-      radial-gradient(1200px 600px at 12% -10%, var(--bg1), transparent 55%),
-      radial-gradient(1000px 620px at 110% 0%, var(--bg2), transparent 50%),
-      linear-gradient(180deg, #fbf8ff, #f4f0ff);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 32px 18px 64px;
+    font-size: 20px;
+    line-height: 1.25;
+    -webkit-font-smoothing: antialiased;
+    padding: 60px 24px 120px;
   }
+  .wrap { max-width: 700px; margin: 0 auto; }
 
-  header {
-    text-align: center;
-    margin: 8px 0 26px;
-    max-width: 640px;
-  }
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--accent2);
-    background: #fff;
-    border: 1px solid var(--line);
-    padding: 6px 14px;
-    border-radius: 999px;
-    box-shadow: 0 8px 22px -14px rgba(124, 92, 255, 0.6);
-  }
+  /* header */
+  .masthead { margin-bottom: 54px; }
+  .flower { font-size: 22px; display: block; margin-bottom: 18px; }
   h1 {
-    font-size: clamp(2.1rem, 6vw, 3.2rem);
-    margin: 16px 0 6px;
-    line-height: 1.02;
-    background: linear-gradient(100deg, var(--accent), var(--accent2) 60%, var(--accent3));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    font-size: 64px;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
   }
-  header p { color: var(--muted); font-size: 1.05rem; margin: 0; }
+  .lede { font-size: 20px; color: var(--ink); margin: 0; max-width: 30em; }
 
-  .card {
-    width: 100%;
-    max-width: 640px;
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 26px;
-  }
-
-  .steps {
+  /* step line */
+  .stepline {
     display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 22px;
+    gap: 20px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 40px;
   }
-  .dot {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 0.82rem; font-weight: 600; color: var(--muted);
-  }
-  .dot .n {
-    width: 24px; height: 24px; border-radius: 50%;
-    display: grid; place-items: center;
-    background: #f1ecfb; color: var(--muted);
-    font-size: 0.8rem; transition: .25s;
-  }
-  .dot.active .n { background: var(--accent2); color: #fff; }
-  .dot.done .n { background: var(--ok); color: #fff; }
-  .dot .bar { width: 22px; height: 2px; background: var(--line); border-radius: 2px; }
+  .stepline span { display: inline-flex; gap: 8px; }
+  .stepline .dot.active { color: var(--ink); }
+  .stepline .dot.done { color: var(--ink); }
+  .stepline .dot.done::before { content: "✿ "; }
 
-  label.field-label { display:block; font-weight: 600; margin-bottom: 8px; }
+  /* type */
+  label.field-label {
+    display: block;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
   textarea, input[type="text"] {
     width: 100%;
     font-family: inherit;
-    font-size: 1.05rem;
+    font-size: 26px;
+    line-height: 1.25;
     color: var(--ink);
-    background: #fbfaff;
-    border: 2px solid var(--line);
-    border-radius: 14px;
-    padding: 14px 16px;
-    transition: border-color .18s, box-shadow .18s;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    padding: 8px 0;
     outline: none;
   }
-  textarea { resize: vertical; min-height: 96px; }
-  textarea:focus, input[type="text"]:focus {
-    border-color: var(--accent2);
-    box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.14);
+  textarea {
+    resize: none;
+    min-height: 44px;
+    overflow: hidden;
   }
+  textarea::placeholder, input::placeholder { color: var(--faint); }
+  input[type="text"]:focus, textarea:focus { border-bottom-color: var(--ink); }
 
-  .chips { display:flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+  /* chips = plain inline suggestions */
+  .chips {
+    margin: 22px 0 0;
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .chips .lbl { text-transform: uppercase; letter-spacing: 0.06em; font-size: 12px; }
   .chip {
-    font: inherit; font-size: 0.86rem;
-    border: 1px dashed #d9cff2; background: #faf7ff; color: var(--accent2);
-    padding: 7px 12px; border-radius: 999px; cursor: pointer;
-    transition: .15s;
-  }
-  .chip:hover { background: var(--accent2); color:#fff; border-color: var(--accent2); transform: translateY(-1px); }
-
-  button.primary {
-    margin-top: 20px;
-    width: 100%;
-    font: inherit; font-weight: 600; font-size: 1.08rem;
-    color: #fff;
-    background: linear-gradient(100deg, var(--accent), var(--accent2));
-    border: none; border-radius: 14px; padding: 15px;
+    font: inherit;
+    font-size: 15px;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--ink);
     cursor: pointer;
-    box-shadow: 0 14px 26px -12px rgba(124, 92, 255, 0.75);
-    transition: transform .12s, filter .2s;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
   }
-  button.primary:hover { transform: translateY(-2px); filter: brightness(1.04); }
-  button.primary:active { transform: translateY(0); }
-  button.primary:disabled { opacity: .6; cursor: not-allowed; transform:none; filter:none; }
+  .chip:hover { color: var(--muted); }
+  .chip + .chip { margin-left: 2px; }
+  .chip-sep { color: var(--faint); }
 
-  button.ghost {
-    font: inherit; font-weight: 600; color: var(--accent2);
-    background: transparent; border: 2px solid var(--line);
-    border-radius: 14px; padding: 13px 18px; cursor: pointer;
-    transition: .15s;
+  /* buttons — bare bordered box, invert on hover */
+  button.primary, button.ghost {
+    font-family: inherit;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 13px 26px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+    border-radius: 0;
+    transition: background .15s, color .15s;
   }
-  button.ghost:hover { border-color: var(--accent2); }
+  button.primary:hover, button.ghost:hover { background: var(--ink); color: var(--paper); }
+  button.primary:disabled { opacity: .35; cursor: not-allowed; background: var(--paper); color: var(--ink); }
 
-  .row { display:flex; gap: 12px; margin-top: 18px; }
-  .row button { flex: 1; margin-top: 0; }
-
-  .blank-grid { display: grid; gap: 14px; }
-  .blank {
-    display: grid; gap: 6px;
-    animation: pop .32s ease both;
-  }
-  .blank .hint {
-    font-size: 0.82rem; font-weight: 600; color: var(--accent2);
-    text-transform: capitalize; letter-spacing: .01em;
-  }
-  .blank .hint span.num {
-    display:inline-grid; place-items:center; width:20px; height:20px;
-    background:#f1ecfb; color:var(--muted); border-radius:50%;
-    font-size:0.72rem; margin-right:7px;
-  }
+  .actions { margin-top: 40px; display: flex; gap: 14px; flex-wrap: wrap; }
 
   .hidden { display: none !important; }
 
-  /* story reveal */
-  .story-title {
-    font-family: "Kalam", cursive;
-    font-size: 1.9rem; font-weight: 700;
-    margin: 0 0 14px; text-align: center;
-    color: var(--accent2);
+  /* blanks */
+  .blank-grid { display: grid; gap: 28px; }
+  .blank { display: grid; gap: 8px; }
+  .blank .hint {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
-  .story {
-    font-family: "Kalam", cursive;
-    font-size: 1.28rem; line-height: 1.9;
-    color: var(--ink);
-    background:
-      linear-gradient(#fff, #fff) padding-box,
-      repeating-linear-gradient(#fff 0 31px, #e9e2fb 31px 32px) padding-box;
-    background: #fffef9;
-    padding: 22px 22px;
-    border-radius: 16px;
-    border: 1px solid var(--line);
-  }
-  .story .fill {
-    color: var(--accent);
-    font-weight: 700;
-    border-bottom: 2px solid rgba(255,90,167,.35);
-    padding: 0 2px;
-    animation: hi .5s ease both;
-  }
+  .blank .hint .num { color: var(--faint); margin-right: 10px; }
 
-  .loader { display:flex; flex-direction:column; align-items:center; gap:14px; padding: 22px 0; }
-  .spinner {
-    width: 46px; height: 46px; border-radius: 50%;
-    border: 5px solid #eee3ff; border-top-color: var(--accent2);
-    animation: spin .8s linear infinite;
+  /* loading */
+  .loader { padding: 10px 0; display: flex; align-items: baseline; gap: 12px; }
+  .loader .spin { display: inline-block; animation: spin 1.4s linear infinite; }
+  .loader p { margin: 0; font-size: 20px; color: var(--ink); }
+
+  /* story */
+  .story-title {
+    font-size: 40px;
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 30px;
   }
-  .loader p { color: var(--muted); margin: 0; font-weight: 500; }
+  .story { font-size: 24px; line-height: 1.5; }
+  .story p { margin: 0 0 1.1em; }
+  .story .fill {
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
 
   .error {
-    margin-top: 14px; padding: 12px 14px;
-    background: #fff1f4; border: 1px solid #ffd0dd; color: #c13a63;
-    border-radius: 12px; font-weight: 500; font-size: 0.95rem;
+    margin-top: 18px;
+    font-size: 15px;
+    color: var(--ink);
+    border-left: 2px solid var(--ink);
+    padding-left: 12px;
   }
 
   .toast {
-    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 999px;
-    font-weight: 600; font-size: 0.92rem; opacity: 0; pointer-events: none;
-    transition: .3s;
+    position: fixed;
+    bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--ink); color: var(--paper);
+    padding: 10px 20px; font-size: 13px;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    opacity: 0; pointer-events: none; transition: .25s;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  footer { color: var(--muted); font-size: 0.85rem; margin-top: 26px; text-align:center; }
+  footer {
+    margin-top: 80px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
 
   @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes pop { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
-  @keyframes hi { from { background: #fff3ba; } to { background: transparent; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
-  @media (prefers-reduced-motion: reduce) {
-    * { animation: none !important; transition: none !important; }
-  }
-  @media (max-width: 480px) {
-    .card { padding: 20px; }
-    .dot span.txt { display:none; }
+  @media (max-width: 560px) {
+    body { padding: 40px 20px 90px; font-size: 18px; }
+    h1 { font-size: 44px; }
+    .story-title { font-size: 30px; }
+    .story { font-size: 21px; }
+    textarea, input[type="text"] { font-size: 22px; }
   }
 </style>
 </head>
 <body>
-  <header>
-    <span class="badge">✨ AI-powered</span>
-    <h1>Mad Libs Machine</h1>
-    <p>Name a theme. We write a silly story around it — you fill in the blanks.</p>
-  </header>
-
-  <div class="card">
-    <div class="steps" id="steps">
-      <div class="dot active" data-step="1"><span class="n">1</span><span class="txt">Theme</span></div>
-      <div class="bar"></div>
-      <div class="dot" data-step="2"><span class="n">2</span><span class="txt">Words</span></div>
-      <div class="bar"></div>
-      <div class="dot" data-step="3"><span class="n">3</span><span class="txt">Story</span></div>
-    </div>
-
-    <!-- STEP 1 -->
-    <section id="step1">
-      <label class="field-label" for="prompt">What should your story be about?</label>
-      <textarea id="prompt" placeholder="e.g. a cat who becomes a spaceship captain"></textarea>
-      <div class="chips" id="chips"></div>
-      <button class="primary" id="genBtn">Write my Mad Lib →</button>
-      <div id="err1"></div>
-    </section>
-
-    <!-- LOADING -->
-    <section id="loading" class="hidden">
-      <div class="loader">
-        <div class="spinner"></div>
-        <p id="loadMsg">Dreaming up your story…</p>
-      </div>
-    </section>
-
-    <!-- STEP 2 -->
-    <section id="step2" class="hidden">
-      <label class="field-label">Fill in the blanks — no peeking at the story!</label>
-      <div class="blank-grid" id="blanks"></div>
-      <div class="row">
-        <button class="ghost" id="backBtn">← New theme</button>
-        <button class="primary" id="revealBtn">Reveal story 🎉</button>
-      </div>
-      <div id="err2"></div>
-    </section>
-
-    <!-- STEP 3 -->
-    <section id="step3" class="hidden">
-      <h2 class="story-title" id="storyTitle"></h2>
-      <div class="story" id="storyText"></div>
-      <div class="row">
-        <button class="ghost" id="editBtn">← Edit words</button>
-        <button class="primary" id="copyBtn">Copy story</button>
-      </div>
-      <div class="row">
-        <button class="ghost" id="againBtn" style="flex:1">Start over</button>
-      </div>
-    </section>
+<div class="wrap">
+  <div class="masthead">
+    <span class="flower">✿</span>
+    <h1>Mad Libs</h1>
+    <p class="lede">Name a theme. A story is written around it — then you fill in the blanks.</p>
   </div>
 
-  <footer>Stories are freshly written by AI for each theme.</footer>
-  <div class="toast" id="toast"></div>
+  <div class="stepline" id="steps">
+    <span class="dot active" data-step="1">Theme</span>
+    <span class="dot" data-step="2">Words</span>
+    <span class="dot" data-step="3">Story</span>
+  </div>
+
+  <!-- STEP 1 -->
+  <section id="step1">
+    <label class="field-label" for="prompt">What should your story be about?</label>
+    <textarea id="prompt" rows="1" placeholder="a cat who becomes a spaceship captain"></textarea>
+    <div class="chips" id="chips"></div>
+    <div class="actions">
+      <button class="primary" id="genBtn">Write it</button>
+    </div>
+    <div id="err1"></div>
+  </section>
+
+  <!-- LOADING -->
+  <section id="loading" class="hidden">
+    <div class="loader">
+      <span class="spin">✿</span>
+      <p id="loadMsg">Writing your story…</p>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section id="step2" class="hidden">
+    <label class="field-label">Fill in the blanks — no peeking at the story</label>
+    <div class="blank-grid" id="blanks"></div>
+    <div class="actions">
+      <button class="primary" id="revealBtn">Reveal story</button>
+      <button class="ghost" id="backBtn">New theme</button>
+    </div>
+    <div id="err2"></div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section id="step3" class="hidden">
+    <h2 class="story-title" id="storyTitle"></h2>
+    <div class="story" id="storyText"></div>
+    <div class="actions">
+      <button class="primary" id="copyBtn">Copy</button>
+      <button class="ghost" id="editBtn">Edit words</button>
+      <button class="ghost" id="againBtn">Start over</button>
+    </div>
+  </section>
+
+  <footer>✿ Stories freshly written by AI</footer>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
   const el = (id) => document.getElementById(id);
@@ -305,40 +269,41 @@
     "a detective solving a pizza heist",
     "my dog running for president",
     "an underwater rock concert",
-    "a wizard's first day at high school",
   ];
 
-  // seed suggestion chips
+  // suggestion links (bare, inline)
   const chips = el("chips");
-  SUGGESTIONS.forEach((s) => {
+  chips.innerHTML = '<span class="lbl">Try&nbsp;&nbsp;</span>';
+  SUGGESTIONS.forEach((s, i) => {
+    if (i > 0) { const sep = document.createElement("span"); sep.className = "chip-sep"; sep.textContent = " · "; chips.appendChild(sep); }
     const b = document.createElement("button");
-    b.className = "chip";
-    b.type = "button";
-    b.textContent = s;
-    b.onclick = () => { el("prompt").value = s; el("prompt").focus(); };
+    b.className = "chip"; b.type = "button"; b.textContent = s;
+    b.onclick = () => { el("prompt").value = s; autoGrow(el("prompt")); el("prompt").focus(); };
     chips.appendChild(b);
   });
+
+  // auto-grow textarea
+  function autoGrow(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }
+  el("prompt").addEventListener("input", () => autoGrow(el("prompt")));
 
   function setStep(n) {
     ["step1","loading","step2","step3"].forEach((s) => el(s).classList.add("hidden"));
     document.querySelectorAll("#steps .dot").forEach((d) => {
       const step = +d.dataset.step;
-      d.classList.toggle("active", step === n);
+      d.classList.toggle("active", step === Math.ceil(n));
       d.classList.toggle("done", step < n);
     });
     if (n === 1) el("step1").classList.remove("hidden");
-    if (n === 1.5) { el("loading").classList.remove("hidden"); document.querySelector('.dot[data-step="1"]').classList.add("done"); document.querySelector('.dot[data-step="1"]').classList.remove("active"); }
+    if (n === 1.5) el("loading").classList.remove("hidden");
     if (n === 2) el("step2").classList.remove("hidden");
     if (n === 3) el("step3").classList.remove("hidden");
   }
 
-  function showError(where, msg) {
-    el(where).innerHTML = '<div class="error">' + msg + '</div>';
-  }
+  function showError(where, msg) { el(where).innerHTML = '<div class="error">' + msg + '</div>'; }
   function clearError(where) { el(where).innerHTML = ""; }
 
   const loadMessages = [
-    "Dreaming up your story…",
+    "Writing your story…",
     "Sharpening the pencils…",
     "Hiding the punchline…",
     "Counting the blanks…",
@@ -347,16 +312,13 @@
   function cycleLoader() {
     let i = 0;
     el("loadMsg").textContent = loadMessages[0];
-    loadTimer = setInterval(() => {
-      i = (i + 1) % loadMessages.length;
-      el("loadMsg").textContent = loadMessages[i];
-    }, 1600);
+    loadTimer = setInterval(() => { i = (i + 1) % loadMessages.length; el("loadMsg").textContent = loadMessages[i]; }, 1600);
   }
 
   async function generate() {
     const prompt = el("prompt").value.trim();
     clearError("err1");
-    if (!prompt) { showError("err1", "Give me a theme to work with 🙂"); return; }
+    if (!prompt) { showError("err1", "Give me a theme to work with."); return; }
 
     setStep(1.5);
     cycleLoader();
@@ -390,12 +352,10 @@
     state.data.blanks.forEach((b, i) => {
       const div = document.createElement("div");
       div.className = "blank";
-      div.style.animationDelay = (i * 0.04) + "s";
       div.innerHTML =
-        '<label class="hint" for="b' + i + '"><span class="num">' + (i+1) + '</span>' +
+        '<label class="hint" for="b' + i + '"><span class="num">' + String(i+1).padStart(2,"0") + '</span>' +
         escapeHtml(b.label) + '</label>' +
-        '<input type="text" id="b' + i + '" autocomplete="off" placeholder="' +
-        escapeHtml(b.label) + '" />';
+        '<input type="text" id="b' + i + '" autocomplete="off" />';
       const input = div.querySelector("input");
       input.value = state.values[i] || "";
       input.addEventListener("input", () => { state.values[i] = input.value; });
@@ -415,7 +375,7 @@
     clearError("err2");
     const missing = state.values.findIndex((v) => !v.trim());
     if (missing !== -1) {
-      showError("err2", "Fill in every blank first — #" + (missing+1) + " is empty.");
+      showError("err2", "Fill in every blank first — number " + String(missing+1).padStart(2,"0") + " is empty.");
       const inp = el("b" + missing);
       if (inp) inp.focus();
       return;
@@ -427,25 +387,22 @@
       const val = '<span class="fill">' + escapeHtml(state.values[i].trim()) + "</span>";
       html = html.split(token).join(val);
     });
-    // paragraph breaks
     html = html.replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>");
 
     el("storyTitle").textContent = state.data.title;
     el("storyText").innerHTML = "<p>" + html + "</p>";
     setStep(3);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function plainStory() {
     let text = state.data.template;
-    state.data.blanks.forEach((b, i) => {
-      text = text.split("[[" + b.id + "]]").join(state.values[i].trim());
-    });
+    state.data.blanks.forEach((b, i) => { text = text.split("[[" + b.id + "]]").join(state.values[i].trim()); });
     return state.data.title + "\n\n" + text;
   }
 
   function escapeHtml(s) {
-    return String(s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
   function toast(msg) {
@@ -455,47 +412,39 @@
     setTimeout(() => t.classList.remove("show"), 1800);
   }
 
-  // wire up
-  el("genBtn").onclick = generate;
-  el("prompt").addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) generate();
-  });
-  el("revealBtn").onclick = revealStory;
-  el("backBtn").onclick = () => setStep(1);
-  el("editBtn").onclick = () => { renderBlanks(); setStep(2); };
-  el("againBtn").onclick = () => { el("prompt").value = ""; setStep(1); el("prompt").focus(); };
   async function copyText(text) {
-    // navigator.clipboard is often blocked inside sandboxed preview iframes,
-    // so fall back to a hidden textarea + execCommand.
     if (navigator.clipboard && window.isSecureContext) {
       try { await navigator.clipboard.writeText(text); return true; } catch {}
     }
     try {
       const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.setAttribute("readonly", "");
-      ta.style.position = "fixed";
-      ta.style.top = "-1000px";
-      ta.style.opacity = "0";
+      ta.value = text; ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.top = "-1000px"; ta.style.opacity = "0";
       document.body.appendChild(ta);
-      ta.select();
-      ta.setSelectionRange(0, text.length);
+      ta.select(); ta.setSelectionRange(0, text.length);
       const ok = document.execCommand("copy");
       document.body.removeChild(ta);
       return ok;
     } catch { return false; }
   }
 
+  // wire up
+  el("genBtn").onclick = generate;
+  el("prompt").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); }
+  });
+  el("revealBtn").onclick = revealStory;
+  el("backBtn").onclick = () => setStep(1);
+  el("editBtn").onclick = () => { renderBlanks(); setStep(2); };
+  el("againBtn").onclick = () => { el("prompt").value = ""; autoGrow(el("prompt")); setStep(1); el("prompt").focus(); };
   el("copyBtn").onclick = async () => {
     const ok = await copyText(plainStory());
-    toast(ok ? "Story copied! 📋" : "Copy blocked — story is selectable below to copy.");
+    toast(ok ? "Copied" : "Copy blocked — select the story to copy");
     if (!ok) {
-      // As a last resort, select the rendered story so the user can Ctrl/Cmd+C.
       const range = document.createRange();
       range.selectNodeContents(el("storyText"));
       const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
+      sel.removeAllRanges(); sel.addRange(range);
     }
   };
 </script>
